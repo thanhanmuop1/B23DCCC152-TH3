@@ -47,6 +47,43 @@ class EmployeeController {
         try {
             const { name, email, phone, password, max_customers_per_day, schedules } = req.body;
 
+            // Kiểm tra số ngày làm việc
+            if (!schedules || schedules.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Phải có ít nhất 1 ngày làm việc'
+                });
+            }
+
+            if (schedules.length > 7) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Không thể đăng ký quá 7 ngày làm việc trong tuần'
+                });
+            }
+
+            // Kiểm tra trùng lặp ngày làm việc
+            const uniqueDays = new Set(schedules.map(s => s.day_of_week));
+            if (uniqueDays.size !== schedules.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Không thể đăng ký trùng lặp ngày làm việc'
+                });
+            }
+
+            // Kiểm tra thời gian làm việc hợp lệ
+            for (const schedule of schedules) {
+                const startTime = new Date(`2000-01-01 ${schedule.start_time}`);
+                const endTime = new Date(`2000-01-01 ${schedule.end_time}`);
+                
+                if (endTime <= startTime) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
+                    });
+                }
+            }
+
             // Mã hóa mật khẩu
             const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -82,6 +119,45 @@ class EmployeeController {
         try {
             const { name, email, phone, max_customers_per_day, schedules } = req.body;
             const employeeId = req.params.id;
+
+            if (schedules) {
+                // Kiểm tra số ngày làm việc
+                if (schedules.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Phải có ít nhất 1 ngày làm việc'
+                    });
+                }
+
+                if (schedules.length > 7) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Không thể đăng ký quá 7 ngày làm việc trong tuần'
+                    });
+                }
+
+                // Kiểm tra trùng lặp ngày làm việc
+                const uniqueDays = new Set(schedules.map(s => s.day_of_week));
+                if (uniqueDays.size !== schedules.length) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Không thể đăng ký trùng lặp ngày làm việc'
+                    });
+                }
+
+                // Kiểm tra thời gian làm việc hợp lệ
+                for (const schedule of schedules) {
+                    const startTime = new Date(`2000-01-01 ${schedule.start_time}`);
+                    const endTime = new Date(`2000-01-01 ${schedule.end_time}`);
+                    
+                    if (endTime <= startTime) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
+                        });
+                    }
+                }
+            }
 
             const userData = {
                 name,
