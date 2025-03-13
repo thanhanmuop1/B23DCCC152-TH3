@@ -38,10 +38,17 @@
 	},
 	
 	{
-		path: '/employee',
-		name: 'Employee Management',
-		component: './employee',
-		icon: 'team',
+		path: '/management',
+		name: 'Management',
+		icon: 'TeamOutlined',
+		routes: [
+			{
+				path: '/management/employee',
+				name: 'Employee Management',
+				component: './management/employee',
+				icon: 'team',
+			},
+		],
 	},
 
 	// DANH MUC HE THONG

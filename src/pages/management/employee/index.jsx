@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
 import { connect } from 'umi';
-import EmployeeList from '@/components/EmployeeList';
-import EmployeeForm from '@/components/EmployeeForm';
+import EmployeeList from './EmployeeList/index';
+import EmployeeForm from './EmployeeForm/index';
 import { Button } from 'antd';
 
 const EmployeePage = ({ employee, dispatch }) => {
