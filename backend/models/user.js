@@ -1,5 +1,5 @@
 const db = require('../configs/database');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 class User {
     // Đăng ký người dùng mới
