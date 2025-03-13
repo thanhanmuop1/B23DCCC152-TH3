@@ -11,7 +11,7 @@ class AppointmentController {
                 from_date: req.query.from_date,
                 to_date: req.query.to_date,
                 employee_id: req.query.employee_id,
-                customer_id: req.query.customer_id
+                customer_phone: req.query.customer_phone
             };
 
             const appointments = await Appointment.getAppointments(filters);
@@ -31,10 +31,10 @@ class AppointmentController {
     // Tạo lịch hẹn mới
     async createAppointment(req, res) {
         try {
-            const { customer_id, employee_id, service_id, appointment_date, appointment_time } = req.body;
+            const { customer_name, customer_phone, employee_id, service_id, appointment_date, appointment_time } = req.body;
 
             // Validate dữ liệu đầu vào
-            if (!customer_id || !employee_id || !service_id || !appointment_date || !appointment_time) {
+            if (!customer_name || !customer_phone || !employee_id || !service_id || !appointment_date || !appointment_time) {
                 return res.status(400).json({
                     success: false,
                     message: 'Thiếu thông tin bắt buộc'
@@ -59,12 +59,17 @@ class AppointmentController {
                 });
             }
 
+            // Tính thời gian kết thúc
+            const startTime = new Date(`1970-01-01T${appointment_time}`);
+            const endTime = new Date(startTime.getTime() + service.duration * 60000);
+            const endTimeStr = endTime.toTimeString().split(' ')[0];
+
             // Kiểm tra lịch trùng
             const isOverlapping = await Appointment.checkOverlappingAppointments(
                 employee_id,
                 appointment_date,
                 appointment_time,
-                service.duration
+                endTimeStr
             );
 
             if (isOverlapping) {
@@ -89,11 +94,13 @@ class AppointmentController {
 
             // Tạo lịch hẹn
             const appointmentId = await Appointment.createAppointment({
-                customer_id,
+                customer_name,
+                customer_phone,
                 employee_id,
                 service_id,
                 appointment_date,
-                appointment_time
+                appointment_time,
+                end_time: endTimeStr
             });
 
             res.status(201).json({

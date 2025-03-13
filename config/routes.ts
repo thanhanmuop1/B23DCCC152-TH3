@@ -36,6 +36,13 @@
 		component: './RandomUser',
 		icon: 'ArrowsAltOutlined',
 	},
+	
+	{
+		path: '/employee',
+		name: 'Employee Management',
+		component: './employee',
+		icon: 'team',
+	},
 
 	// DANH MUC HE THONG
 	// {

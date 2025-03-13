@@ -1,5 +1,4 @@
 const Employee = require('../models/employee');
-const bcrypt = require('bcryptjs');
 
 class EmployeeController {
     // Lấy danh sách nhân viên
@@ -45,17 +44,26 @@ class EmployeeController {
     // Tạo nhân viên mới
     async createEmployee(req, res) {
         try {
-            const { name, email, phone, password, max_customers_per_day, schedules } = req.body;
+            const { name, phone, max_customers_per_day, start_time, end_time, work_days } = req.body;
+            console.log('req.body', req.body);
+
+            // Kiểm tra dữ liệu đầu vào
+            if (!name || !phone || !max_customers_per_day || !start_time || !end_time || !work_days) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Thiếu thông tin bắt buộc'
+                });
+            }
 
             // Kiểm tra số ngày làm việc
-            if (!schedules || schedules.length === 0) {
+            if (!work_days || work_days.length === 0) {
                 return res.status(400).json({
                     success: false,
                     message: 'Phải có ít nhất 1 ngày làm việc'
                 });
             }
 
-            if (schedules.length > 7) {
+            if (work_days.length > 7) {
                 return res.status(400).json({
                     success: false,
                     message: 'Không thể đăng ký quá 7 ngày làm việc trong tuần'
@@ -63,8 +71,8 @@ class EmployeeController {
             }
 
             // Kiểm tra trùng lặp ngày làm việc
-            const uniqueDays = new Set(schedules.map(s => s.day_of_week));
-            if (uniqueDays.size !== schedules.length) {
+            const uniqueDays = new Set(work_days);
+            if (uniqueDays.size !== work_days.length) {
                 return res.status(400).json({
                     success: false,
                     message: 'Không thể đăng ký trùng lặp ngày làm việc'
@@ -72,34 +80,26 @@ class EmployeeController {
             }
 
             // Kiểm tra thời gian làm việc hợp lệ
-            for (const schedule of schedules) {
-                const startTime = new Date(`2000-01-01 ${schedule.start_time}`);
-                const endTime = new Date(`2000-01-01 ${schedule.end_time}`);
-                
-                if (endTime <= startTime) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
-                    });
-                }
+            const startTime = new Date(`2000-01-01 ${start_time}`);
+            const endTime = new Date(`2000-01-01 ${end_time}`);
+            
+            if (endTime <= startTime) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
+                });
             }
 
-            // Mã hóa mật khẩu
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const userData = {
-                name,
-                email,
-                phone,
-                password: hashedPassword
-            };
-
             const employeeData = {
+                name,
+                phone,
                 max_customers_per_day,
-                schedules
+                start_time,
+                end_time,
+                work_days
             };
 
-            const employeeId = await Employee.createEmployee(userData, employeeData);
+            const employeeId = await Employee.createEmployee(employeeData);
             res.status(201).json({
                 success: true,
                 message: 'Tạo nhân viên thành công',
@@ -117,19 +117,27 @@ class EmployeeController {
     // Cập nhật thông tin nhân viên
     async updateEmployee(req, res) {
         try {
-            const { name, email, phone, max_customers_per_day, schedules } = req.body;
+            const { name, phone, max_customers_per_day, start_time, end_time, work_days } = req.body;
             const employeeId = req.params.id;
 
-            if (schedules) {
+            // Kiểm tra dữ liệu đầu vào
+            if (!name || !phone || !max_customers_per_day) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Thiếu thông tin bắt buộc'
+                });
+            }
+
+            if (work_days) {
                 // Kiểm tra số ngày làm việc
-                if (schedules.length === 0) {
+                if (work_days.length === 0) {
                     return res.status(400).json({
                         success: false,
                         message: 'Phải có ít nhất 1 ngày làm việc'
                     });
                 }
 
-                if (schedules.length > 7) {
+                if (work_days.length > 7) {
                     return res.status(400).json({
                         success: false,
                         message: 'Không thể đăng ký quá 7 ngày làm việc trong tuần'
@@ -137,40 +145,38 @@ class EmployeeController {
                 }
 
                 // Kiểm tra trùng lặp ngày làm việc
-                const uniqueDays = new Set(schedules.map(s => s.day_of_week));
-                if (uniqueDays.size !== schedules.length) {
+                const uniqueDays = new Set(work_days);
+                if (uniqueDays.size !== work_days.length) {
                     return res.status(400).json({
                         success: false,
                         message: 'Không thể đăng ký trùng lặp ngày làm việc'
                     });
                 }
+            }
 
-                // Kiểm tra thời gian làm việc hợp lệ
-                for (const schedule of schedules) {
-                    const startTime = new Date(`2000-01-01 ${schedule.start_time}`);
-                    const endTime = new Date(`2000-01-01 ${schedule.end_time}`);
-                    
-                    if (endTime <= startTime) {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
-                        });
-                    }
+            // Kiểm tra thời gian làm việc hợp lệ
+            if (start_time && end_time) {
+                const startTime = new Date(`2000-01-01 ${start_time}`);
+                const endTime = new Date(`2000-01-01 ${end_time}`);
+                
+                if (endTime <= startTime) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
+                    });
                 }
             }
 
-            const userData = {
-                name,
-                email,
-                phone
-            };
-
             const employeeData = {
+                name,
+                phone,
                 max_customers_per_day,
-                schedules
+                start_time,
+                end_time,
+                work_days
             };
 
-            await Employee.updateEmployee(employeeId, userData, employeeData);
+            await Employee.updateEmployee(employeeId, employeeData);
             res.json({
                 success: true,
                 message: 'Cập nhật nhân viên thành công'

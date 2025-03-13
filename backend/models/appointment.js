@@ -6,12 +6,11 @@ class Appointment {
         try {
             let query = `
                 SELECT a.*, 
-                       c.name as customer_name, c.phone as customer_phone,
+                       e.name as employee_name, e.phone as employee_phone,
                        e.max_customers_per_day,
                        s.name as service_name, s.duration as service_duration,
                        s.price as service_price
                 FROM appointments a
-                JOIN users c ON a.customer_id = c.id
                 JOIN employees e ON a.employee_id = e.id
                 JOIN services s ON a.service_id = s.id
                 WHERE 1=1
@@ -38,9 +37,9 @@ class Appointment {
                 params.push(filters.employee_id);
             }
 
-            if (filters.customer_id) {
-                query += ' AND a.customer_id = ?';
-                params.push(filters.customer_id);
+            if (filters.customer_phone) {
+                query += ' AND a.customer_phone = ?';
+                params.push(filters.customer_phone);
             }
 
             query += ' ORDER BY a.appointment_date, a.appointment_time';
@@ -53,19 +52,18 @@ class Appointment {
     }
 
     // Kiểm tra lịch trình trùng
-    static async checkOverlappingAppointments(employeeId, date, startTime, duration) {
+    static async checkOverlappingAppointments(employeeId, date, startTime, endTime) {
         try {
             const query = `
-                SELECT a.*, s.duration
+                SELECT *
                 FROM appointments a
-                JOIN services s ON a.service_id = s.id
                 WHERE a.employee_id = ?
                 AND a.appointment_date = ?
                 AND a.status NOT IN ('canceled')
                 AND (
-                    (a.appointment_time <= ? AND ADDTIME(a.appointment_time, SEC_TO_TIME(s.duration * 60)) > ?)
+                    (a.appointment_time <= ? AND a.end_time > ?)
                     OR
-                    (a.appointment_time < ADDTIME(?, SEC_TO_TIME(? * 60)) AND a.appointment_time >= ?)
+                    (a.appointment_time < ? AND a.appointment_time >= ?)
                 )
             `;
             
@@ -74,8 +72,7 @@ class Appointment {
                 date,
                 startTime,
                 startTime,
-                startTime,
-                duration,
+                endTime,
                 startTime
             ]);
 
@@ -112,16 +109,19 @@ class Appointment {
         try {
             const query = `
                 INSERT INTO appointments 
-                (customer_id, employee_id, service_id, appointment_date, appointment_time, status)
-                VALUES (?, ?, ?, ?, ?, 'pending')
+                (customer_name, customer_phone, employee_id, service_id, 
+                appointment_date, appointment_time, end_time, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
             `;
             
             const [result] = await db.execute(query, [
-                appointmentData.customer_id,
+                appointmentData.customer_name,
+                appointmentData.customer_phone,
                 appointmentData.employee_id,
                 appointmentData.service_id,
                 appointmentData.appointment_date,
-                appointmentData.appointment_time
+                appointmentData.appointment_time,
+                appointmentData.end_time
             ]);
 
             return result.insertId;
@@ -151,12 +151,11 @@ class Appointment {
         try {
             const query = `
                 SELECT a.*, 
-                       c.name as customer_name, c.phone as customer_phone,
+                       e.name as employee_name, e.phone as employee_phone,
                        e.max_customers_per_day,
                        s.name as service_name, s.duration as service_duration,
                        s.price as service_price
                 FROM appointments a
-                JOIN users c ON a.customer_id = c.id
                 JOIN employees e ON a.employee_id = e.id
                 JOIN services s ON a.service_id = s.id
                 WHERE a.id = ?
@@ -184,10 +183,11 @@ class Appointment {
 
             // Lấy lịch làm việc của nhân viên
             const [schedule] = await db.execute(
-                `SELECT start_time, end_time 
-                 FROM work_schedules 
-                 WHERE employee_id = ? 
-                 AND day_of_week = DAYNAME(?)`,
+                `SELECT ws.start_time, ws.end_time 
+                 FROM work_schedules ws
+                 JOIN employee_work_days ewd ON ws.employee_id = ewd.employee_id
+                 WHERE ws.employee_id = ? 
+                 AND ewd.work_day = WEEKDAY(?)`,
                 [employeeId, date]
             );
 
@@ -195,13 +195,12 @@ class Appointment {
 
             // Lấy tất cả lịch hẹn trong ngày
             const [appointments] = await db.execute(
-                `SELECT a.appointment_time, s.duration
-                 FROM appointments a
-                 JOIN services s ON a.service_id = s.id
-                 WHERE a.employee_id = ?
-                 AND a.appointment_date = ?
-                 AND a.status NOT IN ('canceled')
-                 ORDER BY a.appointment_time`,
+                `SELECT appointment_time, end_time
+                 FROM appointments
+                 WHERE employee_id = ?
+                 AND appointment_date = ?
+                 AND status NOT IN ('canceled')
+                 ORDER BY appointment_time`,
                 [employeeId, date]
             );
 
@@ -211,25 +210,29 @@ class Appointment {
             const endTime = schedule[0].end_time;
 
             while (currentTime <= endTime) {
-                const slotEnd = new Date('1970-01-01T' + currentTime).getTime() + serviceDuration * 60000;
-                const slotEndTime = new Date(slotEnd).toTimeString().split(' ')[0];
+                // Tính thời gian kết thúc slot
+                const slotStart = new Date('1970-01-01T' + currentTime);
+                const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
+                const slotEndTime = slotEnd.toTimeString().split(' ')[0];
 
                 if (slotEndTime > endTime) break;
 
                 const isOverlapping = appointments.some(apt => {
-                    const aptStart = new Date('1970-01-01T' + apt.appointment_time).getTime();
-                    const aptEnd = aptStart + apt.duration * 60000;
-                    const slotStart = new Date('1970-01-01T' + currentTime).getTime();
+                    const aptStart = new Date('1970-01-01T' + apt.appointment_time);
+                    const aptEnd = new Date('1970-01-01T' + apt.end_time);
                     
                     return (slotStart < aptEnd && slotEnd > aptStart);
                 });
 
                 if (!isOverlapping) {
-                    slots.push(currentTime);
+                    slots.push({
+                        start_time: currentTime,
+                        end_time: slotEndTime
+                    });
                 }
 
                 // Tăng thời gian lên 30 phút
-                const time = new Date('1970-01-01T' + currentTime).getTime() + 30 * 60000;
+                const time = slotStart.getTime() + 30 * 60000;
                 currentTime = new Date(time).toTimeString().split(' ')[0];
             }
 
