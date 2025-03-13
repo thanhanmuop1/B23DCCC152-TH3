@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const employeeRoutes = require('./routes/employeeRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 // Routes
 app.use('/api/employees', employeeRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
