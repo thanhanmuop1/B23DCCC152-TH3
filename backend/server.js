@@ -3,6 +3,8 @@ const cors = require('cors');
 const employeeRoutes = require('./routes/employeeRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const statisticsRoutes = require('./routes/statistics');
+const ratingRoutes = require('./routes/ratings');
 
 const app = express();
 
@@ -14,6 +16,8 @@ app.use(express.json());
 app.use('/api/employees', employeeRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/statistics', statisticsRoutes);
+app.use('/api/ratings', ratingRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

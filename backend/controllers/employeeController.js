@@ -62,7 +62,7 @@ class EmployeeController {
                     message: 'Phải có ít nhất 1 ngày làm việc'
                 });
             }
-
+            console.log('work_days_length', Array.isArray(work_days));
             if (work_days.length > 7) {
                 return res.status(400).json({
                     success: false,
@@ -90,7 +90,7 @@ class EmployeeController {
                     message: 'Thời gian kết thúc phải sau thời gian bắt đầu'
                 });
             }
-
+            
             const employeeData = {
                 name,
                 phone,

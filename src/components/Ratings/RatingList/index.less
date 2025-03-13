@@ -1,0 +1,54 @@
+.ratingList {
+  :global {
+    .ant-list-item {
+      padding: 0;
+      margin-bottom: 16px;
+    }
+    
+    .ant-card {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+.ratingHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  
+  .userInfo {
+    margin-left: 12px;
+    flex: 1;
+    
+    h4 {
+      margin: 0;
+      font-weight: 500;
+    }
+    
+    span {
+      color: rgba(0, 0, 0, 0.45);
+      font-size: 12px;
+    }
+  }
+  
+  .serviceInfo {
+    text-align: right;
+    
+    :global {
+      .ant-tag {
+        margin-left: 8px;
+      }
+    }
+  }
+}
+
+.ratingContent {
+  .ant-rate {
+    margin-bottom: 8px;
+  }
+  
+  p {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.85);
+  }
+} 

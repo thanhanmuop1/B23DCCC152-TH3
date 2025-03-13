@@ -55,12 +55,9 @@ CREATE TABLE appointments (
 
 CREATE TABLE ratings (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    customer_name VARCHAR(255) NOT NULL,
-    employee_id INT NOT NULL,
-    service_id INT NOT NULL,
-    rating INT CHECK (rating BETWEEN 1 AND 5),
+    appointment_id INT NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 10),
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE
 );

@@ -40,7 +40,7 @@
 	{
 		path: '/management',
 		name: 'Management',
-		icon: 'TeamOutlined',
+		icon: 'SettingOutlined',
 		routes: [
 			{
 				path: '/management/employee',
@@ -54,7 +54,29 @@
 				icon: 'calendar',
 				component: './booking',
 			  }, 
+			  {
+				path: '/management/statistics',
+				name: 'Statistics',
+				icon: 'BarChartOutlined',
+				component: './statistics',
+			  },
+			  {
+				path: '/management/rating',
+				name: 'Rating',
+				component: './ratings',
+			  },
+			{
+				path: '/management/service',
+				name: 'service',
+				component: './management/service',
+			},
 		],
+	},
+
+	{
+		path: '/user-booking',
+		name: 'User Booking',
+		component: './user-booking',
 	},
 
 	// DANH MUC HE THONG
@@ -108,5 +130,9 @@
 	},
 	{
 		component: './exception/404',
+	},
+	{
+		path: '/user-booking',
+		component: './user-booking',
 	},
 ];
