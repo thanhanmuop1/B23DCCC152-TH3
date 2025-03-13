@@ -81,17 +81,27 @@ const BookingPage = () => {
   };
   
   // Xử lý form đặt lịch
-  const handleFormValuesChange = (changedValues) => {
-    if (changedValues.employee_id || changedValues.service_id || changedValues.appointment_date) {
-      const currentValues = form.getFieldsValue();
-      if (currentValues.employee_id && currentValues.service_id && currentValues.appointment_date) {
-        appointmentManager.fetchAvailableSlots(
-          currentValues.employee_id,
-          currentValues.appointment_date,
-          currentValues.service_id,
+  const handleFormValuesChange = async (values) => {
+    console.log('Form values changed:', values); // Để debug
+    
+    const { employee_id, service_id, appointment_date } = values;
+    
+    if (employee_id && service_id && appointment_date) {
+      try {
+        setSlotsLoading(true);
+        const response = await appointmentManager.fetchAvailableSlots(
+          employee_id,
+          appointment_date,
+          service_id,
           setAvailableSlots,
           setSlotsLoading
         );
+        console.log('Available slots:', response); // Để debug
+      } catch (error) {
+        console.error('Error fetching slots:', error);
+        message.error('Không thể lấy danh sách giờ trống');
+      } finally {
+        setSlotsLoading(false);
       }
     }
   };
@@ -218,7 +228,10 @@ const BookingPage = () => {
       {/* Sử dụng component AppointmentForm */}
       <AppointmentForm
         visible={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          setAvailableSlots([]); // Reset available slots khi đóng form
+        }}
         onSubmit={handleCreateAppointment}
         employees={employees}
         services={services}

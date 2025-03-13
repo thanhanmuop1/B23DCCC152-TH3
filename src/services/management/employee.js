@@ -2,18 +2,15 @@ import { request } from 'umi';
 
 const API_URL = 'http://localhost:3000/api';
 
-export async function getEmployees() {
+// Lấy danh sách nhân viên
+export async function getEmployees(params) {
   return request(`${API_URL}/employees`, {
     method: 'GET',
+    params,
   });
 }
 
-export async function getEmployeeById(id) {
-  return request(`${API_URL}/employees/${id}`, {
-    method: 'GET',
-  });
-}
-
+// Tạo nhân viên mới
 export async function createEmployee(data) {
   return request(`${API_URL}/employees`, {
     method: 'POST',
@@ -21,6 +18,7 @@ export async function createEmployee(data) {
   });
 }
 
+// Cập nhật nhân viên
 export async function updateEmployee(id, data) {
   return request(`${API_URL}/employees/${id}`, {
     method: 'PUT',
@@ -28,6 +26,7 @@ export async function updateEmployee(id, data) {
   });
 }
 
+// Xóa nhân viên
 export async function deleteEmployee(id) {
   return request(`${API_URL}/employees/${id}`, {
     method: 'DELETE',

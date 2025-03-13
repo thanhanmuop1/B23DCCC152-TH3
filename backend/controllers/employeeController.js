@@ -54,7 +54,7 @@ class EmployeeController {
                     message: 'Thiếu thông tin bắt buộc'
                 });
             }
-
+            console.log('work_days', work_days);
             // Kiểm tra số ngày làm việc
             if (!work_days || work_days.length === 0) {
                 return res.status(400).json({
@@ -69,7 +69,7 @@ class EmployeeController {
                     message: 'Không thể đăng ký quá 7 ngày làm việc trong tuần'
                 });
             }
-
+            console.log('work_days', work_days);
             // Kiểm tra trùng lặp ngày làm việc
             const uniqueDays = new Set(work_days);
             if (uniqueDays.size !== work_days.length) {
@@ -78,7 +78,8 @@ class EmployeeController {
                     message: 'Không thể đăng ký trùng lặp ngày làm việc'
                 });
             }
-
+            console.log('start_time', start_time);
+            console.log('end_time', end_time);
             // Kiểm tra thời gian làm việc hợp lệ
             const startTime = new Date(`2000-01-01 ${start_time}`);
             const endTime = new Date(`2000-01-01 ${end_time}`);
@@ -119,7 +120,7 @@ class EmployeeController {
         try {
             const { name, phone, max_customers_per_day, start_time, end_time, work_days } = req.body;
             const employeeId = req.params.id;
-
+            console.log('req.body', req.body);
             // Kiểm tra dữ liệu đầu vào
             if (!name || !phone || !max_customers_per_day) {
                 return res.status(400).json({
@@ -153,7 +154,8 @@ class EmployeeController {
                     });
                 }
             }
-
+            console.log('start_time', start_time);
+            console.log('end_time', end_time);
             // Kiểm tra thời gian làm việc hợp lệ
             if (start_time && end_time) {
                 const startTime = new Date(`2000-01-01 ${start_time}`);

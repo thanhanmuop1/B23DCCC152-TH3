@@ -32,52 +32,42 @@ export const fetchAppointments = async (filters, setAppointments, setLoading) =>
   }
 };
 
-// Hàm lấy danh sách nhân viên
-export const fetchEmployees = async (setEmployees) => {
-  // Trong bài tập nhỏ này, chúng ta sẽ dùng dữ liệu mẫu
-  setEmployees([
-    { id: 1, name: 'Thành', phone: '0337963055', max_customers_per_day: 5 },
-    { id: 2, name: 'John Doe', phone: '0123456789', max_customers_per_day: 8 },
-    { id: 3, name: 'Jane Smith', phone: '0987654321', max_customers_per_day: 6 },
-  ]);
-};
-
-// Hàm lấy danh sách dịch vụ
-export const fetchServices = async (setServices) => {
-  // Trong bài tập nhỏ này, chúng ta sẽ dùng dữ liệu mẫu
-  setServices([
-    { id: 1, name: 'Gội đầu', duration: 30, price: 10000 },
-    { id: 2, name: 'Cắt tóc', duration: 45, price: 100000 },
-    { id: 3, name: 'Uốn tóc', duration: 120, price: 500000 },
-    { id: 4, name: 'Nhuộm tóc', duration: 90, price: 400000 },
-  ]);
-};
-
 // Hàm lấy danh sách slot trống
 export const fetchAvailableSlots = async (employeeId, date, serviceId, setAvailableSlots, setSlotsLoading) => {
-  if (!employeeId || !date || !serviceId) return;
+  if (!employeeId || !date || !serviceId) {
+    console.log('Missing required params:', { employeeId, date, serviceId }); // Để debug
+    return;
+  }
   
-  setSlotsLoading(true);
   try {
     const params = {
       employee_id: employeeId,
-      date: date.format('YYYY-MM-DD'),
+      date: typeof date === 'string' ? date : moment(date).format('YYYY-MM-DD'),
       service_id: serviceId,
     };
     
+    console.log('Fetching slots with params:', params); // Để debug
+    
     const response = await getAvailableSlots(params);
-    if (response.success) {
-      setAvailableSlots(response.data);
+    console.log('API Response:', response); // Để debug
+    
+    if (response && response.success) {
+      const formattedSlots = response.data.map(slot => ({
+        start_time: slot.start_time,
+        end_time: slot.end_time
+      }));
+      setAvailableSlots(formattedSlots);
+      return formattedSlots;
     } else {
       message.error('Không thể tải danh sách slot trống');
       setAvailableSlots([]);
+      return [];
     }
   } catch (error) {
     console.error('Error fetching available slots:', error);
     message.error('Lỗi khi tải danh sách slot trống');
     setAvailableSlots([]);
-  } finally {
-    setSlotsLoading(false);
+    return [];
   }
 };
 

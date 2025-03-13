@@ -27,8 +27,23 @@ export async function updateAppointmentStatus(id, status) {
 
 // Hàm lấy danh sách slot trống
 export async function getAvailableSlots(params) {
-  return request(`${API_URL}/appointments/available-slots`, {
-    method: 'GET',
-    params,
-  });
+  try {
+    const response = await request(`${API_URL}/appointments/available-slots`, {
+      method: 'GET',
+      params,
+    });
+    
+    console.log('API Response:', response); // Để debug
+    
+    return {
+      success: true,
+      data: response.data || []
+    };
+  } catch (error) {
+    console.error('API Error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 } 
