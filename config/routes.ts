@@ -48,6 +48,12 @@
 				component: './management/employee',
 				icon: 'team',
 			},
+			{
+				path: '/management/booking',
+				name: 'Booking Management',
+				icon: 'calendar',
+				component: './booking',
+			  }, 
 		],
 	},
 

@@ -95,4 +95,45 @@ export default {
       return { ...state, currentEmployee: payload };
     },
   },
+};
+
+// Hàm lấy danh sách nhân viên từ API
+export const fetchEmployeesFromAPI = async (setEmployees, setLoading) => {
+  if (setLoading) setLoading(true);
+  try {
+    // Trong bài tập thực tế, bạn sẽ gọi API ở đây
+    // const response = await getEmployees();
+    
+    // Dữ liệu mẫu
+    const employees = [
+      { id: 1, name: 'Thành', phone: '0337963055', max_customers_per_day: 5 },
+      { id: 2, name: 'John Doe', phone: '0123456789', max_customers_per_day: 8 },
+      { id: 3, name: 'Jane Smith', phone: '0987654321', max_customers_per_day: 6 },
+    ];
+    
+    setEmployees(employees);
+    return employees;
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    message.error('Lỗi khi tải danh sách nhân viên');
+    return [];
+  } finally {
+    if (setLoading) setLoading(false);
+  }
+};
+
+// Hàm lấy nhân viên theo ID
+export const getEmployeeById = (employees, id) => {
+  return employees.find(emp => emp.id === id);
+};
+
+// Hàm tạo options cho Select component
+export const getEmployeeOptions = (employees) => {
+  return [
+    { value: null, label: 'All Employees' },
+    ...employees.map(emp => ({
+      value: emp.id,
+      label: emp.name
+    }))
+  ];
 }; 
