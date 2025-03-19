@@ -3,6 +3,7 @@ import * as ratingService from '@/services/management/ratings';
 import * as employeeService from '@/services/management/employee';
 import * as serviceService from '@/services/management/service';
 import { Service, Employee, RatingStats, SetState } from './types';
+import { getAppointmentById, getRatingByAppointment } from '@/services/management/ratings';
 
 export const fetchOptionsData = async (
   setServices: SetState<Service[]>,
@@ -201,6 +202,103 @@ export const respondToRating = async (
   } catch (error) {
     console.error('Error responding to rating:', error);
     message.error('Lỗi khi gửi phản hồi');
+    return false;
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+// Cập nhật hàm kiểm tra trạng thái đánh giá và lấy thông tin appointment
+export const checkAppointmentForRating = async (
+  appointmentId: number,
+  setLoading: SetState<boolean>
+): Promise<{
+  canRate: boolean;
+  appointmentData?: any;
+  existingRating?: any;
+}> => {
+  setLoading(true);
+  try {
+    // Lấy thông tin lịch hẹn từ API
+    console.log("Getting appointment:", appointmentId);
+    const appointmentRes = await getAppointmentById(appointmentId);
+    console.log("Appointment response:", appointmentRes);
+    
+    if (!appointmentRes || !appointmentRes.success) {
+      console.error('Failed to get appointment:', appointmentRes);
+      message.error('Không thể tải thông tin lịch hẹn');
+      return { canRate: false };
+    }
+    
+    const appointmentData = appointmentRes.data;
+    console.log("Appointment data:", appointmentData);
+    
+    if (!appointmentData) {
+      message.error('Không tìm thấy dữ liệu lịch hẹn');
+      return { canRate: false };
+    }
+    
+    // Kiểm tra xem lịch hẹn đã hoàn thành chưa
+    if (appointmentData.status !== 'completed') {
+      message.warning('Chỉ có thể đánh giá các lịch hẹn đã hoàn thành');
+      return { canRate: false, appointmentData };
+    }
+    
+    // Kiểm tra xem đã đánh giá chưa
+    try {
+      const ratingRes = await getRatingByAppointment(appointmentId);
+      console.log("Rating response:", ratingRes);
+      
+      if (ratingRes.success && ratingRes.data) {
+        // Đã có đánh giá
+        return {
+          canRate: false,
+          appointmentData,
+          existingRating: ratingRes.data
+        };
+      }
+    } catch (ratingError) {
+      console.error('Error checking rating:', ratingError);
+      // Nếu lỗi kiểm tra rating, vẫn cho phép đánh giá
+    }
+    
+    // Chưa có đánh giá và đủ điều kiện đánh giá
+    return {
+      canRate: true,
+      appointmentData
+    };
+  } catch (error) {
+    console.error('Error checking appointment for rating:', error);
+    message.error('Lỗi khi kiểm tra trạng thái đánh giá');
+    return { canRate: false };
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Chỉnh sửa hàm gửi đánh giá để phù hợp với backend
+export const submitAppointmentRating = async (
+  data: {
+    appointment_id: number;
+    rating: number;
+    comment: string;
+  },
+  setSubmitting: SetState<boolean>
+): Promise<boolean> => {
+  setSubmitting(true);
+  try {
+    const response = await ratingService.createRating(data);
+    
+    if (response.success) {
+      message.success('Gửi đánh giá thành công!');
+      return true;
+    } else {
+      message.error(response.message || 'Không thể gửi đánh giá');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error submitting rating:', error);
+    message.error('Lỗi khi gửi đánh giá');
     return false;
   } finally {
     setSubmitting(false);

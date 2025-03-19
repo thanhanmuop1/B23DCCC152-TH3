@@ -1,112 +1,146 @@
-import React from 'react';
-import { Card, Tag, Typography, Space, Button, Dropdown, Menu } from 'antd';
-import { EllipsisOutlined, CheckOutlined, CloseOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Card, Button, Tag, Dropdown, Menu, message, Modal } from 'antd';
+import { EllipsisOutlined, ClockCircleOutlined, UserOutlined, CheckOutlined, CloseOutlined, StarOutlined } from '@ant-design/icons';
 import moment from 'moment';
-import type { AppointmentData } from '../model';
 import { useDispatch } from 'umi';
-
-const { Text } = Typography;
+import RatingModal from './RatingModal';
+import styles from './AppointmentCard.less';
 
 interface AppointmentCardProps {
-  appointment: AppointmentData;
+  appointment: any;
+  onStatusUpdate: (id: number, status: string) => void;
 }
 
-const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment }) => {
+const statusColors = {
+  pending: 'orange',
+  confirmed: 'blue',
+  completed: 'green',
+  canceled: 'red',
+};
+
+const statusLabels = {
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
+  completed: 'Đã hoàn thành',
+  canceled: 'Đã hủy',
+};
+
+const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onStatusUpdate }) => {
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const dispatch = useDispatch();
-  
-  const handleStatusChange = (status: string) => {
-    dispatch({
-      type: 'booking/updateStatus',
-      payload: {
-        id: appointment.id,
-        status,
+
+  const handleComplete = () => {
+    Modal.confirm({
+      title: 'Xác nhận hoàn thành',
+      content: 'Bạn có chắc chắn muốn đánh dấu lịch hẹn này là đã hoàn thành?',
+      onOk: () => {
+        onStatusUpdate(appointment.id, 'completed');
+        // Hiển thị modal đánh giá sau khi hoàn thành
+        setRatingModalVisible(true);
       },
     });
   };
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'completed':
-        return 'processing';
-      case 'canceled':
-        return 'error';
-      default:
-        return 'default';
-    }
+
+  const handleRatingSuccess = () => {
+    setRatingModalVisible(false);
+    message.success('Đánh giá đã được gửi thành công');
+    // Refresh danh sách lịch hẹn
+    dispatch({
+      type: 'booking/fetchAppointments',
+    });
   };
-  
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircleOutlined />;
-      case 'pending':
-        return <ClockCircleOutlined />;
-      case 'completed':
-        return <CheckOutlined />;
-      case 'canceled':
-        return <CloseOutlined />;
-      default:
-        return null;
-    }
-  };
-  
-  const menu = (
+
+  const actionMenu = (
     <Menu>
-      <Menu.Item key="confirm" onClick={() => handleStatusChange('confirmed')}>
-        <CheckOutlined /> Confirm
-      </Menu.Item>
-      <Menu.Item key="complete" onClick={() => handleStatusChange('completed')}>
-        <CheckCircleOutlined /> Complete
-      </Menu.Item>
-      <Menu.Item key="cancel" onClick={() => handleStatusChange('canceled')}>
-        <CloseOutlined /> Cancel
-      </Menu.Item>
+      {appointment.status === 'pending' && (
+        <Menu.Item key="confirm" onClick={() => onStatusUpdate(appointment.id, 'confirmed')}>
+          <CheckOutlined /> Xác nhận
+        </Menu.Item>
+      )}
+      {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+        <Menu.Item key="complete" onClick={handleComplete}>
+          <CheckOutlined /> Hoàn thành
+        </Menu.Item>
+      )}
+      {appointment.status === 'completed' && (
+        <Menu.Item key="rate" onClick={() => setRatingModalVisible(true)}>
+          <StarOutlined /> Đánh giá
+        </Menu.Item>
+      )}
+      {appointment.status !== 'canceled' && appointment.status !== 'completed' && (
+        <Menu.Item key="cancel" danger onClick={() => onStatusUpdate(appointment.id, 'canceled')}>
+          <CloseOutlined /> Hủy
+        </Menu.Item>
+      )}
     </Menu>
   );
 
   return (
-    <Card 
-      size="small" 
-      style={{ 
-        marginBottom: 8,
-        borderLeft: `4px solid ${
-          appointment.status === 'confirmed' ? '#52c41a' : 
-          appointment.status === 'pending' ? '#faad14' : 
-          appointment.status === 'completed' ? '#1890ff' : '#f5222d'
-        }`
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <div>
-          <Text strong>{appointment.service_name}</Text>
-          <div>
-            <Text type="secondary">
-              {moment(appointment.appointment_time, 'HH:mm:ss').format('HH:mm')} - {moment(appointment.end_time, 'HH:mm:ss').format('HH:mm')}
-            </Text>
+    <>
+      <Card className={styles.card} size="small">
+        <div className={styles.header}>
+          <div className={styles.time}>
+            <ClockCircleOutlined /> {moment(appointment.appointment_time, 'HH:mm:ss').format('HH:mm')}
+            {' - '}
+            {moment(appointment.end_time, 'HH:mm:ss').format('HH:mm')}
           </div>
-          <div>
-            <Text>Customer: {appointment.customer_name} ({appointment.customer_phone})</Text>
-          </div>
-          <div>
-            <Text>Employee: {appointment.employee_name}</Text>
-          </div>
+          <Tag color={statusColors[appointment.status]}>{statusLabels[appointment.status]}</Tag>
         </div>
-        <div>
-          <Space direction="vertical" align="end">
-            <Tag color={getStatusColor(appointment.status)} icon={getStatusIcon(appointment.status)}>
-              {appointment.status}
-            </Tag>
-            <Dropdown overlay={menu} trigger={['click']}>
-              <Button type="text" icon={<EllipsisOutlined />} />
+        
+        <div className={styles.title}>{appointment.service_name}</div>
+        
+        <div className={styles.content}>
+          <div className={styles.customerInfo}>
+            <div><UserOutlined /> {appointment.customer_name}</div>
+            <div>{appointment.customer_phone}</div>
+          </div>
+          
+          <div className={styles.actions}>
+            {appointment.status === 'pending' && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => onStatusUpdate(appointment.id, 'confirmed')}
+              >
+                Xác nhận
+              </Button>
+            )}
+            
+            {appointment.status === 'confirmed' && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={handleComplete}
+              >
+                Hoàn thành
+              </Button>
+            )}
+            
+            {appointment.status === 'completed' && (
+              <Button
+                size="small"
+                type="primary"
+                icon={<StarOutlined />}
+                onClick={() => setRatingModalVisible(true)}
+              >
+                Đánh giá
+              </Button>
+            )}
+            
+            <Dropdown overlay={actionMenu} trigger={['click']}>
+              <Button size="small" icon={<EllipsisOutlined />} />
             </Dropdown>
-          </Space>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      <RatingModal
+        visible={ratingModalVisible}
+        appointmentId={appointment.id}
+        onCancel={() => setRatingModalVisible(false)}
+        onSuccess={handleRatingSuccess}
+      />
+    </>
   );
 };
 

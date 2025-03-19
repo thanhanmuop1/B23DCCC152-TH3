@@ -1,5 +1,6 @@
 import { request } from 'umi';
 import { ApiResponse, Rating, RatingStats, PaginationParams } from './types';
+import { getAppointmentById as fetchAppointment } from '@/services/management/appointment';
 
 const API_URL = 'http://localhost:3000/api/ratings';
 
@@ -11,6 +12,12 @@ export async function createRating(data: {
   return request(API_URL, {
     method: 'POST',
     data,
+  });
+}
+
+export async function getRatingByAppointment(appointmentId: number): Promise<ApiResponse<Rating>> {
+  return request(`${API_URL}/appointment/${appointmentId}`, {
+    method: 'GET',
   });
 }
 
@@ -32,4 +39,7 @@ export async function getRatingsByEmployee(
     method: 'GET',
     params,
   });
-} 
+}
+
+// Export lại hàm getAppointmentById từ appointment service
+export const getAppointmentById = fetchAppointment; 

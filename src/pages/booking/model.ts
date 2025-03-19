@@ -1,6 +1,7 @@
 import { Effect, Reducer } from 'umi';
 import { getAppointments, createAppointment, updateAppointmentStatus, getAvailableSlots } from '@/services/management/appointment';
 import moment from 'moment';
+import { message } from 'antd';
 
 export interface AppointmentData {
   id: number;
@@ -52,6 +53,7 @@ export interface BookingModelType {
     updateStatus: Effect;
     fetchAvailableSlots: Effect;
     changeDate: Effect;
+    updateAppointmentStatus: Effect;
   };
   reducers: {
     setAppointments: Reducer<BookingModelState>;
@@ -131,6 +133,31 @@ const BookingModel: BookingModelType = {
           to_date: payload
         }
       });
+    },
+    
+    *updateAppointmentStatus({ payload }, { call, put }) {
+      const { id, status } = payload;
+      yield put({ type: 'setLoading', payload: true });
+      
+      try {
+        const response = yield call(updateAppointmentStatus, id, status);
+        
+        if (response.success) {
+          message.success(`Lịch hẹn đã được cập nhật thành ${status === 'completed' ? 'hoàn thành' : status}`);
+          
+          // Refresh danh sách lịch hẹn
+          yield put({ type: 'fetchAppointments' });
+          
+          return response;
+        } else {
+          message.error(response.message || 'Không thể cập nhật trạng thái lịch hẹn');
+        }
+      } catch (error) {
+        console.error('Error updating appointment status:', error);
+        message.error('Lỗi khi cập nhật trạng thái lịch hẹn');
+      } finally {
+        yield put({ type: 'setLoading', payload: false });
+      }
     },
   },
   reducers: {

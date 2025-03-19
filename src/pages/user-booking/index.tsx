@@ -3,7 +3,6 @@ import { Card, Steps } from 'antd';
 import { connect, Dispatch } from 'umi';
 import BookingForm from './components/BookingForm';
 import BookingResult from './components/BookingResult';
-import ReviewForm from './components/ReviewForm';
 import { UserBookingModelState } from './model';
 import styles from './style.less';
 
@@ -23,8 +22,6 @@ const UserBookingPage: React.FC<UserBookingPageProps> = ({ userBooking, dispatch
         return <BookingForm />;
       case 1:
         return <BookingResult bookingResult={bookingResult} />;
-      case 2:
-        return <ReviewForm />;
       default:
         return null;
     }
@@ -36,7 +33,6 @@ const UserBookingPage: React.FC<UserBookingPageProps> = ({ userBooking, dispatch
         <Steps current={currentStep} className={styles.steps}>
           <Step title="Đặt lịch" />
           <Step title="Xác nhận" />
-          <Step title="Đánh giá" />
         </Steps>
         {renderContent()}
       </Card>

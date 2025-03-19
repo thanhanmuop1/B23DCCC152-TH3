@@ -50,7 +50,7 @@ export async function updateAppointmentStatus(
 
 export async function getAppointmentById(
   id: number
-): Promise<ApiResponse<AppointmentData>> {
+): Promise<ApiResponse<any>> {
   return request(`${API_URL}/${id}`, {
     method: 'GET',
   });

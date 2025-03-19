@@ -1,0 +1,59 @@
+.card {
+  margin-bottom: 16px;
+  transition: all 0.3s;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.time {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.customerInfo {
+  flex: 1;
+  
+  div {
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: rgba(0, 0, 0, 0.65);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.employee {
+  margin-top: 8px;
+  font-weight: 500;
+  color: #1890ff;
+} 

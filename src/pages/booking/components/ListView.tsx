@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Table, Tag, Space, Button, Dropdown, Menu, DatePicker, Select, Tooltip } from 'antd';
+import { Table, Tag, Space, Button, Dropdown, Menu, DatePicker, Select, Tooltip, List, Card, Spin } from 'antd';
 import { DownOutlined, CheckOutlined, CloseOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { AppointmentData } from '../model';
 import { useDispatch } from 'umi';
+import AppointmentCard from './AppointmentCard';
+import styles from './ListView.less';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -18,13 +20,10 @@ const ListView: React.FC<ListViewProps> = ({ appointments, loading }) => {
   const [dateRange, setDateRange] = useState<[moment.Moment, moment.Moment] | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
-  const handleStatusChange = (id: number, status: string) => {
+  const handleStatusUpdate = (id: number, status: string) => {
     dispatch({
-      type: 'booking/updateStatus',
-      payload: {
-        id,
-        status,
-      },
+      type: 'booking/updateAppointmentStatus',
+      payload: { id, status },
     });
   };
 
@@ -91,167 +90,57 @@ const ListView: React.FC<ListViewProps> = ({ appointments, loading }) => {
     }
   };
 
-  const columns = [
-    {
-      title: 'Date',
-      dataIndex: 'appointment_date',
-      key: 'appointment_date',
-      render: (date: string) => moment(date).format('DD/MM/YYYY'),
-      sorter: (a: AppointmentData, b: AppointmentData) => {
-        const dateA = moment(a.appointment_date).valueOf();
-        const dateB = moment(b.appointment_date).valueOf();
-        return dateA - dateB;
-      },
-    },
-    {
-      title: 'Time',
-      key: 'time',
-      render: (_, record: AppointmentData) => (
-        <span>
-          {moment(record.appointment_time, 'HH:mm:ss').format('HH:mm')} - {moment(record.end_time, 'HH:mm:ss').format('HH:mm')}
-        </span>
-      ),
-      sorter: (a: AppointmentData, b: AppointmentData) => {
-        const timeA = moment(a.appointment_time, 'HH:mm:ss').valueOf();
-        const timeB = moment(b.appointment_time, 'HH:mm:ss').valueOf();
-        return timeA - timeB;
-      },
-    },
-    {
-      title: 'Customer',
-      key: 'customer',
-      render: (_, record: AppointmentData) => (
-        <Tooltip title={`Phone: ${record.customer_phone}`}>
-          <span>{record.customer_name}</span>
-        </Tooltip>
-      ),
-    },
-    {
-      title: 'Service',
-      key: 'service',
-      render: (_, record: AppointmentData) => (
-        <Tooltip title={`Duration: ${record.service_duration} min, Price: ${record.service_price} VND`}>
-          <span>{record.service_name}</span>
-        </Tooltip>
-      ),
-    },
-    {
-      title: 'Employee',
-      dataIndex: 'employee_name',
-      key: 'employee_name',
-      render: (name: string, record: AppointmentData) => (
-        <Tooltip title={`Phone: ${record.employee_phone}`}>
-          <span>{name}</span>
-        </Tooltip>
-      ),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)} icon={getStatusIcon(status)}>
-          {status}
-        </Tag>
-      ),
-      filters: [
-        { text: 'Pending', value: 'pending' },
-        { text: 'Confirmed', value: 'confirmed' },
-        { text: 'Completed', value: 'completed' },
-        { text: 'Canceled', value: 'canceled' },
-      ],
-      onFilter: (value: string, record: AppointmentData) => record.status === value,
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record: AppointmentData) => {
-        const menu = (
-          <Menu>
-            <Menu.Item 
-              key="confirm" 
-              onClick={() => handleStatusChange(record.id, 'confirmed')}
-              disabled={record.status === 'confirmed' || record.status === 'completed' || record.status === 'canceled'}
-            >
-              <CheckOutlined /> Confirm
-            </Menu.Item>
-            <Menu.Item 
-              key="complete" 
-              onClick={() => handleStatusChange(record.id, 'completed')}
-              disabled={record.status === 'completed' || record.status === 'canceled'}
-            >
-              <CheckCircleOutlined /> Complete
-            </Menu.Item>
-            <Menu.Item 
-              key="cancel" 
-              onClick={() => handleStatusChange(record.id, 'canceled')}
-              disabled={record.status === 'canceled' || record.status === 'completed'}
-            >
-              <CloseOutlined /> Cancel
-            </Menu.Item>
-          </Menu>
-        );
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
-        return (
-          <Dropdown overlay={menu}>
-            <Button>
-              Actions <DownOutlined />
-            </Button>
-          </Dropdown>
-        );
-      },
-    },
-  ];
+  if (!appointments || appointments.length === 0) {
+    return (
+      <Card className={styles.emptyCard}>
+        <div className={styles.emptyText}>Không có lịch hẹn nào</div>
+      </Card>
+    );
+  }
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }}>
+      <div className={styles.filtersContainer}>
         <RangePicker 
           onChange={handleDateRangeChange}
           value={dateRange}
           format="DD/MM/YYYY"
+          className={styles.dateFilter}
         />
         <Select
-          placeholder="Filter by status"
-          style={{ width: 150 }}
+          placeholder="Lọc theo trạng thái"
           allowClear
           onChange={handleStatusFilterChange}
           value={statusFilter}
+          className={styles.statusFilter}
         >
-          <Option value="pending">Pending</Option>
-          <Option value="confirmed">Confirmed</Option>
-          <Option value="completed">Completed</Option>
-          <Option value="canceled">Canceled</Option>
+          <Option value="pending">Chờ xác nhận</Option>
+          <Option value="confirmed">Đã xác nhận</Option>
+          <Option value="completed">Đã hoàn thành</Option>
+          <Option value="canceled">Đã hủy</Option>
         </Select>
-      </Space>
+      </div>
       
-      <Table
-        columns={columns}
+      <List
+        grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 3, xl: 4, xxl: 4 }}
         dataSource={appointments}
-        loading={loading}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 1000 }}
-        summary={(pageData) => {
-          const totalAppointments = pageData.length;
-          const confirmedAppointments = pageData.filter(item => item.status === 'confirmed').length;
-          const pendingAppointments = pageData.filter(item => item.status === 'pending').length;
-          
-          return (
-            <Table.Summary fixed>
-              <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
-                <Table.Summary.Cell index={1} colSpan={5}>
-                  <Space>
-                    <span>Total: {totalAppointments}</span>
-                    <Tag color="success">Confirmed: {confirmedAppointments}</Tag>
-                    <Tag color="warning">Pending: {pendingAppointments}</Tag>
-                  </Space>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            </Table.Summary>
-          );
-        }}
+        className={styles.listGrid}
+        renderItem={appointment => (
+          <List.Item>
+            <AppointmentCard 
+              appointment={appointment} 
+              onStatusUpdate={handleStatusUpdate}
+            />
+          </List.Item>
+        )}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { LeftOutlined, RightOutlined, PlusOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import type { AppointmentData } from '../model';
 import AppointmentCard from './AppointmentCard';
-import { useRequest } from 'umi';
+import { useRequest, useDispatch } from 'umi';
 import { getAllEmployees } from '@/services/management/employee';
 import { getAllServices } from '@/services/management/service';
 
@@ -44,6 +44,8 @@ const DailyView: React.FC<DailyViewProps> = ({
   // Tạo các khung giờ từ 8:00 đến 20:00
   const timeSlots = Array.from({ length: 13 }, (_, i) => i + 8);
   
+  const dispatch = useDispatch();
+
   const handlePrevDay = () => {
     const prevDay = moment(selectedDate).subtract(1, 'day');
     onDateChange(prevDay);
@@ -63,6 +65,13 @@ const DailyView: React.FC<DailyViewProps> = ({
 
   const formatTimeSlot = (hour: number) => {
     return `${hour}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+  };
+
+  const handleStatusUpdate = (id: number, status: string) => {
+    dispatch({
+      type: 'booking/updateAppointmentStatus',
+      payload: { id, status },
+    });
   };
 
   return (
@@ -141,6 +150,7 @@ const DailyView: React.FC<DailyViewProps> = ({
                       <AppointmentCard 
                         key={appointment.id} 
                         appointment={appointment} 
+                        onStatusUpdate={handleStatusUpdate}
                       />
                     ))
                   ) : (

@@ -1,0 +1,50 @@
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+  height: 200px;
+}
+
+.emptyCard {
+  background-color: #fafafa;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.emptyText {
+  text-align: center;
+  padding: 48px 0;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 16px;
+}
+
+.filtersContainer {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dateFilter {
+  min-width: 250px;
+}
+
+.statusFilter {
+  min-width: 150px;
+}
+
+.listGrid {
+  margin-top: 16px;
+}
+
+@media (max-width: 576px) {
+  .filtersContainer {
+    flex-direction: column;
+  }
+  
+  .dateFilter,
+  .statusFilter {
+    width: 100%;
+  }
+} 

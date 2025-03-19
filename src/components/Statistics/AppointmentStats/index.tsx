@@ -1,138 +1,93 @@
 import React from 'react';
-import { Card, DatePicker, Select, Row, Col, Spin } from 'antd';
-import { Column } from '@ant-design/charts';
+import { Card, Table, DatePicker } from 'antd';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import moment from 'moment';
-import { 
-  AppointmentDailyStats, 
-  AppointmentMonthlyStats 
-} from '@/services/management/statistics';
 import styles from './index.less';
 
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
-interface AppointmentStatsProps {
-  data: AppointmentDailyStats[] | AppointmentMonthlyStats[];
-  loading: boolean;
-  onDateChange: (value: any) => void;
-  viewType: 'daily' | 'monthly';
-}
-
-const AppointmentStats: React.FC<AppointmentStatsProps> = ({ 
+const AppointmentStats = ({ 
   data, 
   loading, 
-  onDateChange,
-  viewType
+  onDateChange, 
+  viewType = 'daily' // 'daily' or 'monthly'
 }) => {
-  const formatData = () => {
-    if (viewType === 'daily') {
-      return (data as AppointmentDailyStats[]).map(item => ({
-        date: moment(item.date).format('DD/MM/YYYY'),
-        type: 'Tổng',
-        value: item.total_appointments,
-      })).concat(
-        (data as AppointmentDailyStats[]).map(item => ({
-          date: moment(item.date).format('DD/MM/YYYY'),
-          type: 'Hoàn thành',
-          value: item.completed,
-        }))
-      ).concat(
-        (data as AppointmentDailyStats[]).map(item => ({
-          date: moment(item.date).format('DD/MM/YYYY'),
-          type: 'Đã hủy',
-          value: item.canceled,
-        }))
-      ).concat(
-        (data as AppointmentDailyStats[]).map(item => ({
-          date: moment(item.date).format('DD/MM/YYYY'),
-          type: 'Chờ xác nhận',
-          value: item.pending,
-        }))
-      );
-    } else {
-      const monthNames = [
-        'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-        'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-      ];
-      
-      return (data as AppointmentMonthlyStats[]).map(item => ({
-        date: monthNames[item.month - 1],
-        type: 'Tổng',
-        value: item.total_appointments,
-      })).concat(
-        (data as AppointmentMonthlyStats[]).map(item => ({
-          date: monthNames[item.month - 1],
-          type: 'Hoàn thành',
-          value: item.completed,
-        }))
-      ).concat(
-        (data as AppointmentMonthlyStats[]).map(item => ({
-          date: monthNames[item.month - 1],
-          type: 'Đã hủy',
-          value: item.canceled,
-        }))
-      ).concat(
-        (data as AppointmentMonthlyStats[]).map(item => ({
-          date: monthNames[item.month - 1],
-          type: 'Chờ xác nhận',
-          value: item.pending,
-        }))
-      );
-    }
-  };
+  // Chuyển đổi data cho biểu đồ
+  const chartData = data.map(item => ({
+    name: viewType === 'daily' ? moment(item.date).format('DD/MM') : `T${item.month}`,
+    'Đã hoàn thành': item.completed,
+    'Đã hủy': item.canceled,
+    'Đang chờ': item.pending
+  }));
 
-  const config = {
-    data: formatData(),
-    isGroup: true,
-    xField: 'date',
-    yField: 'value',
-    seriesField: 'type',
-    label: {
-      position: 'middle',
-      layout: [
-        { type: 'interval-adjust-position' },
-        { type: 'interval-hide-overlap' },
-        { type: 'adjust-color' },
-      ],
+  const columns = [
+    {
+      title: viewType === 'daily' ? 'Ngày' : 'Tháng',
+      dataIndex: viewType === 'daily' ? 'date' : 'month',
+      key: viewType === 'daily' ? 'date' : 'month',
+      render: (text) => viewType === 'daily' 
+        ? moment(text).format('DD/MM/YYYY')
+        : `Tháng ${text}`,
     },
-    color: ['#1890ff', '#52c41a', '#ff4d4f', '#faad14'],
-  };
+    {
+      title: 'Tổng lịch hẹn',
+      dataIndex: 'total_appointments',
+      key: 'total_appointments',
+    },
+    {
+      title: 'Hoàn thành',
+      dataIndex: 'completed',
+      key: 'completed',
+    },
+    {
+      title: 'Đã hủy',
+      dataIndex: 'canceled',
+      key: 'canceled',
+    },
+    {
+      title: 'Đang chờ',
+      dataIndex: 'pending',
+      key: 'pending',
+    },
+  ];
 
   return (
-    <Card className={styles.statsCard}>
-      <Row gutter={16} align="middle" className={styles.filterRow}>
-        <Col>
-          {viewType === 'daily' ? (
-            <RangePicker 
-              onChange={onDateChange}
-              defaultValue={[
-                moment().subtract(30, 'days'),
-                moment()
-              ]}
-            />
-          ) : (
-            <Select 
-              defaultValue={moment().year()} 
-              style={{ width: 120 }}
-              onChange={onDateChange}
-            >
-              {Array.from({ length: 5 }, (_, i) => moment().year() - i).map(year => (
-                <Option key={year} value={year}>{year}</Option>
-              ))}
-            </Select>
-          )}
-        </Col>
-      </Row>
-      
-      <Spin spinning={loading}>
-        <div className={styles.chartContainer}>
-          {data.length > 0 ? (
-            <Column {...config} />
-          ) : (
-            <div className={styles.noData}>Không có dữ liệu</div>
-          )}
-        </div>
-      </Spin>
+    <Card 
+      title={`Thống kê lịch hẹn ${viewType === 'daily' ? 'theo ngày' : 'theo tháng'}`}
+      extra={
+        viewType === 'daily' ? (
+          <RangePicker onChange={onDateChange} />
+        ) : (
+          <DatePicker 
+            picker="year" 
+            onChange={(date) => onDateChange(date.year())} 
+          />
+        )
+      }
+      className={styles.statsCard}
+    >
+      <div style={{ width: '100%', height: 400 }}>
+        <ResponsiveContainer>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="Đã hoàn thành" fill="#52c41a" />
+            <Bar dataKey="Đã hủy" fill="#ff4d4f" />
+            <Bar dataKey="Đang chờ" fill="#faad14" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <Table 
+        columns={columns} 
+        dataSource={data} 
+        loading={loading}
+        rowKey={viewType === 'daily' ? 'date' : 'month'}
+        pagination={false}
+      />
     </Card>
   );
 };
